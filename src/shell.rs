@@ -17,60 +17,39 @@ impl GnomeShell {
         Self { connection }
     }
 
-    pub fn show_osd(&self, icon: String, label: Option<String>, level: Option<f64>) -> Result<(), Box<dyn Error>> {
+    pub fn show_osd(
+        &self,
+        icon: String,
+        label: Option<String>,
+        level: Option<f64>,
+    ) -> Result<(), Box<dyn Error>> {
         let message = Message::new_method_call(
             DBUS_SERVICE_NAME,
             DBUS_OBJECT_PATH,
             DBUS_INTERFACE,
             "ShowOSD",
         )?;
-        let args: Vec<(MessageItem, MessageItem)> = if label.is_none() && level.is_none() {
-            vec![(
-                MessageItem::Str(String::from("icon")),
-                MessageItem::Variant(Box::new(MessageItem::Str(icon))),
-            )]
-        } else if label.is_none() && level.is_some() {
-            vec![
-                (
-                    MessageItem::Str(String::from("icon")),
-                    MessageItem::Variant(Box::new(MessageItem::Str(icon))),
-                ),
-                (
-                    MessageItem::Str(String::from("level")),
-                    MessageItem::Variant(Box::new(MessageItem::Double(level.unwrap()))),
-                ),
-            ]
-        } else if level.is_none() && label.is_some() {
-            vec![
-                (
-                    MessageItem::Str(String::from("icon")),
-                    MessageItem::Variant(Box::new(MessageItem::Str(icon))),
-                ),
-                (
-                    MessageItem::Str(String::from("label")),
-                    MessageItem::Variant(Box::new(MessageItem::Str(label.unwrap()))),
-                ),
-            ]
-        } else {
-            vec![
-                (
-                    MessageItem::Str(String::from("icon")),
-                    MessageItem::Variant(Box::new(MessageItem::Str(icon))),
-                ),
-                (
-                    MessageItem::Str(String::from("label")),
-                    MessageItem::Variant(Box::new(MessageItem::Str(label.unwrap()))),
-                ),
-                (
-                    MessageItem::Str(String::from("level")),
-                    MessageItem::Variant(Box::new(MessageItem::Double(level.unwrap()))),
-                ),
-            ]
-        };
-
-        self.connection
-            .channel()
-            .send_with_reply_and_block(message.append1(MessageItem::new_dict(args).unwrap()), TIMEOUT)?;
+        let mut args: Vec<(MessageItem, MessageItem)> = Vec::new();
+        args.push((
+            MessageItem::Str(String::from("icon")),
+            MessageItem::Variant(Box::new(MessageItem::Str(icon))),
+        ));
+        if label.is_some() {
+            args.push((
+                MessageItem::Str(String::from("label")),
+                MessageItem::Variant(Box::new(MessageItem::Str(label.unwrap()))),
+            ))
+        }
+        if level.is_some() {
+            args.push((
+                MessageItem::Str(String::from("level")),
+                MessageItem::Variant(Box::new(MessageItem::Double(level.unwrap()))),
+            ))
+        }
+        self.connection.channel().send_with_reply_and_block(
+            message.append1(MessageItem::new_dict(args).unwrap()),
+            TIMEOUT,
+        )?;
         Ok(())
     }
 }
